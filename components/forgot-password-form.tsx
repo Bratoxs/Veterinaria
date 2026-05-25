@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail } from "lucide-react";
 
 export function ForgotPasswordForm({
@@ -24,6 +24,13 @@ export function ForgotPasswordForm({
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Limpia el input y errores al ingresar o montar la vista
+  useEffect(() => {
+    setEmail("");
+    setError(null);
+    setSuccess(false);
+  }, []);
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
@@ -31,15 +38,54 @@ export function ForgotPasswordForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
-      });
+      // Validar existencia y estado "aprobado" en la tabla usuarios
+      const { data: dbUser, error: dbError } = await supabase
+        .from("usuarios")
+        .select("estado")
+        .eq("correo", email.trim().toLowerCase())
+        .maybeSingle();
 
-      if (error) throw error;
+      if (dbError) {
+        console.error("Error al comprobar el correo:", dbError);
+        throw new Error("Error al verificar el correo en el sistema.");
+      }
+
+      // Si el correo no existe registrado en la base de datos
+      if (!dbUser) {
+        setError("El correo electrónico ingresado no se encuentra registrado.");
+        setEmail(""); // Limpiamos el input
+        setIsLoading(false);
+        return;
+      }
+
+      // Si existe pero no está aprobado (pendiente, suspendido, rechazado)
+      if (dbUser.estado !== "aprobado") {
+        if (dbUser.estado === "pendiente") {
+          setError("Tu cuenta aún está pendiente de aprobación por un administrador.");
+        } else if (dbUser.estado === "suspendido") {
+          setError("Esta cuenta se encuentra suspendida. No puedes restablecer contraseña.");
+        } else if (dbUser.estado === "rechazado") {
+          setError("Tu solicitud de acceso fue rechazada.");
+        }
+        setEmail(""); // Limpiamos el input
+        setIsLoading(false);
+        return;
+      }
+
+      // Si el usuario existe y está aprobado, se envía el enlace de recuperación
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        {
+          redirectTo: `${window.location.origin}/auth/update-password`,
+        }
+      );
+
+      if (authError) throw authError;
 
       setSuccess(true);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Ha ocurrido un error");
+      setEmail("");
     } finally {
       setIsLoading(false);
     }
@@ -48,19 +94,19 @@ export function ForgotPasswordForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       {success ? (
-        <Card className="border-none shadow-2xl shadow-slate-200 rounded-[2.5rem] overflow-hidden">
+        <Card className="shadow-2xl shadow-slate-200 rounded-[2.5rem] overflow-hidden">
           <CardHeader className="pt-10 px-10">
             <CardTitle className="text-2xl text-[#0d9488] font-bold uppercase tracking-tight text-center">Revisa tu correo</CardTitle>
           </CardHeader>
           <CardContent className="p-10 pt-4">
-            <div className="bg-teal-50 p-4 rounded-2xl border border-teal-100 mb-6 text-center">  
+            <div className="bg-teal-50 dark:bg-teal-950/30 p-4 rounded-2xl border border-teal-100 dark:border-teal-900/50 mb-6 text-center">  
               <p className="text-sm text-muted-foreground">
-                Si el usuario es válido, se han enviado las instrucciones de restablecimiento 
-                al correo electrónico vinculado a tu cuenta en breve.
+                Se han enviado con éxito las instrucciones de restablecimiento 
+                al correo electrónico vinculado a tu cuenta. Por favor, verifica tu bandeja de entrada.
               </p>
             </div>
             <Link href="/auth/login" className="block w-full">
-              <Button className="w-full bg-[#0d9488] hover:bg-[#0a7a70] text-white h-12 rounded-xl font-bold transition-all">
+              <Button className="w-full bg-[#0d9488] hover:bg-[#0a7a70] text-white h-12 rounded-xl font-bold transition-all active:scale-95">
                 Volver al Inicio
               </Button>
             </Link>
@@ -92,7 +138,7 @@ export function ForgotPasswordForm({
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                {error && <p className="text-xs text-red-500 text-center font-medium">{error}</p>}
+                {error && <p className="text-[11px] text-red-500 text-center font-bold bg-red-50 dark:bg-red-950/30 py-2 rounded-xl border border-red-100 dark:border-red-900/50 animate-in fade-in-50 duration-200">{error}</p>}
                 <Button 
                   type="submit" 
                   className="w-full bg-[#0d9488] hover:bg-[#0a7a70] text-white h-12 rounded-2xl font-bold shadow-teal-100 transition-all active:scale-95"
