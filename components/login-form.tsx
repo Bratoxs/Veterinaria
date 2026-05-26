@@ -117,8 +117,11 @@ export function LoginForm({
                   />
                 </div>
                 <h2 className="text-[#0d9488] text-xl font-bold tracking-widest">
-                  Veterinaria
+                  VetCare
                 </h2>
+                <p className="text-[11px] text-slate-500 font-bold">
+                  Sistema de Gestión Veterinaria
+                </p>
               </div>
 
               {/* Input de Usuario (Username) con Icono */}

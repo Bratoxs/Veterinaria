@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -26,20 +25,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased min-h-screen relative`}>
+    <html lang="es" suppressHydrationWarning>
+      {/* 1. Cambiamos las clases del body a flex y min-h-screen */}
+      <body className={`${geistSans.className} antialiased min-h-screen flex flex-col relative`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {/* Contenedor flotante a la derecha para el selector de tema */}
-          <div className="absolute top-4 right-4 z-50 md:top-6 md:right-6">
-            <ThemeSwitcher />
+          {/* 2. El contenido ocupará todo el espacio disponible y empujará al footer */}
+          <div className="flex-1 flex flex-col">
+            {children}
           </div>
-
-          {children}
         </ThemeProvider>
       </body>
     </html>
