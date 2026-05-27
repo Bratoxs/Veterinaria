@@ -114,7 +114,7 @@ export function Sidebar() {
             title="Aprobaciones / Roles"
           >
             <ShieldAlert className="h-4 w-4 shrink-0" />
-            {!isCollapsed && <span className="animate-fadeIn">Aprobaciones / Roles</span>}
+            {!isCollapsed && <span className="animate-fadeIn">Aprobaciones Pendientes</span>}
           </Link>
         </div>
 

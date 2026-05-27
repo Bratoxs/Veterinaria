@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  Phone,
 } from "lucide-react";
 
 // 1. Limpiamos la definición de los Props para recibir solo className de forma segura
@@ -34,6 +35,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [username, setUsername] = useState("");
+  const [celular, setCelular] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -55,6 +57,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
     setNombre("");
     setApellido("");
     setUsername("");
+    setCelular("");
     setEmail("");
     setPassword("");
     setRepeatPassword("");
@@ -149,7 +152,13 @@ export function SignUpForm({ className }: SignUpFormProps) {
       return;
     }
 
-    // REQUISITO: Mínimo 6 caracteres, 1 Mayúscula, 1 Número y 1 Caracter Especial
+    // Validar que contenga solo números (ej. Ecuador: 09XXXXXXXX o similar)
+    if (celular.length !== 9) {
+      setError("El número de celular debe tener exactamente 9 dígitos.");
+      return;
+    }
+
+    // Mínimo 6 caracteres, 1 Mayúscula, 1 Número y 1 Caracter Especial
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,}$/;
 
@@ -186,6 +195,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
             nombre: nombre.trim(),
             apellido: apellido.trim(),
             username: username,
+            celular: celular.trim(),
           },
         },
       });
@@ -280,14 +290,13 @@ export function SignUpForm({ className }: SignUpFormProps) {
             <div className="space-y-1 group/field">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600 h-4 w-4" />
                   <Input
                     id="username"
                     type="text"
                     placeholder="Usuario asignado"
-                    disabled
                     readOnly
-                    className="pl-10 bg-gray-100 border-gray-200 text-gray-600 rounded-xl h-12 cursor-not-allowed font-medium select-none"
+                    className="pl-10 bg-teal-50/60 border-teal-100 text-teal-900 rounded-xl h-12 cursor-default select-none focus-visible:ring-transparent"
                     value={username}
                     required
                   />
@@ -308,6 +317,30 @@ export function SignUpForm({ className }: SignUpFormProps) {
                 {username
                   ? "✓ Nombre de usuario disponible y verificado."
                   : "Haz clic en Generar para asignar tu identificador único."}
+              </p>
+            </div>
+
+            {/* Celular */}
+            <div className="space-y-1 group/field">
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 transition-colors [.was-validated_&]:group-has-[:invalid]/field:text-red-500" />
+                <Input
+                  id="celular"
+                  type="tel" // Tipo telefónico nativo
+                  placeholder="Celular"
+                  maxLength={9} // Limita longitud máxima razonable
+                  className="pl-10 bg-gray-50 border-gray-100 text-black rounded-xl h-12 focus-visible:ring-[#0d9488] transition-all [.was-validated_&]:invalid:border-red-500 [.was-validated_&]:invalid:bg-red-50/30"
+                  required
+                  value={celular}
+                  onChange={(e) => {
+                    // Reemplaza cualquier carácter que no sea número para limpiar la entrada en tiempo real
+                    const valueClean = e.target.value.replace(/[^0-9]/g, "");
+                    setCelular(valueClean);
+                  }}
+                />
+              </div>
+              <p className="hidden text-[10px] text-red-500 font-medium pl-1 [.was-validated_&]:group-has-[:invalid]/field:block">
+                El número de celular es obligatorio para el registro del personal.
               </p>
             </div>
 
