@@ -1,4 +1,4 @@
-// app/admin/usuarios/page.tsx
+
 import { createClient } from "@/lib/supabase/server"; // Ajusta la ruta a tu cliente de Supabase
 import { revalidatePath } from "next/cache";
 import UsuariosAdminClient from "./UsuariosAdminClient"; // Componente cliente que crearemos para manejar la UI
@@ -9,7 +9,7 @@ export default async function Page() {
   // 🔍 AQUÍ SE HACE LA CONSULTA DIRECTA A TU TABLA
   const { data: usuarios, error } = await supabase
     .from("usuarios")
-    .select("id, username, nombre, apellido, correo, celular, rol_id, estado")
+    .select("id, cedula, username, nombre, apellido, correo, celular, rol_id, estado, created_at")
     .eq("estado", "pendiente") // Trae solo las solicitudes que están pendientes
     .order("nombre", { ascending: true });
 

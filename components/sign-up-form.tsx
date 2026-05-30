@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Lock,
   Mail,
@@ -24,6 +24,7 @@ import {
   Eye,
   EyeOff,
   Phone,
+  Fingerprint,
 } from "lucide-react";
 
 // 1. Limpiamos la definición de los Props para recibir solo className de forma segura
@@ -32,6 +33,7 @@ interface SignUpFormProps {
 }
 
 export function SignUpForm({ className }: SignUpFormProps) {
+  const [cedula, setCedula] = useState("");
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [username, setUsername] = useState("");
@@ -51,23 +53,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const router = useRouter();
-
-  // Se ejecuta obligatoriamente cada vez que la pantalla se renderiza
-  useEffect(() => {
-    setNombre("");
-    setApellido("");
-    setUsername("");
-    setCelular("");
-    setEmail("");
-    setPassword("");
-    setRepeatPassword("");
-    setError(null);
-    setShowValidationStyles(false);
-    setShowConfirmModal(false);
-    setShowPassword(false);
-    setShowRepeatPassword(false);
-  }, []);
-
+  
   // Función idéntica a la lógica de Postgres para limpiar caracteres
   const cleanString = (str: string) => {
     return str
@@ -147,14 +133,20 @@ export function SignUpForm({ className }: SignUpFormProps) {
       return;
     }
 
+    // Validación de Cédula (10 dígitos exactos)
+    if (cedula.length !== 10) {
+      setError("El número de cédula debe tener exactamente 10 dígitos.");
+      return;
+    }
+
     if (!username) {
       setError("Debes generar un nombre de usuario antes de registrarte.");
       return;
     }
 
     // Validar que contenga solo números (ej. Ecuador: 09XXXXXXXX o similar)
-    if (celular.length !== 9) {
-      setError("El número de celular debe tener exactamente 9 dígitos.");
+    if (celular.length !== 10) {
+      setError("El número de celular debe tener exactamente 10 dígitos.");
       return;
     }
 
@@ -183,19 +175,37 @@ export function SignUpForm({ className }: SignUpFormProps) {
     setShowConfirmModal(false);
     const supabase = createClient();
     setIsLoading(true);
+    setError(null);
 
     try {
-      // Registramos directamente mandando solo nombre y apellido en los metadatos
+      // Consultar si la cédula ya existe en la tabla pública
+      const { data: existingCedula, error: cedulaCheckError } = await supabase
+        .from("usuarios")
+        .select("cedula")
+        .eq("cedula", cedula.trim())
+        .maybeSingle();
+
+      if (cedulaCheckError) throw cedulaCheckError;
+
+      if (existingCedula) {
+        setError("El número de cédula ya se encuentra registrado.");
+        setIsLoading(false);
+        return; // Frenamos el flujo aquí antes de llamar al signUp de Auth
+      }
+
+      // Registramos directamente mandando solo nombre, apellido, username, celular, estado en los metadatos
       const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          // emailRedirectTo: `${window.location.origin}/protected`,
           data: {
+            cedula: cedula.trim(),
             nombre: nombre.trim(),
             apellido: apellido.trim(),
             username: username,
             celular: celular.trim(),
+            estado: "pendiente",
           },
         },
       });
@@ -206,6 +216,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
     } catch (error: unknown) {
       if (error instanceof Error) {
         const msg = error.message.toLowerCase();
+        console.error("Error durante el registro:", error);
 
         if (msg.includes("rate limit exceeded")) {
           setError(
@@ -216,6 +227,8 @@ export function SignUpForm({ className }: SignUpFormProps) {
           msg.includes("already registered")
         ) {
           setError("Este correo electrónico ya está registrado.");
+        } else if (msg.includes("database error saving new user")) {
+          setError("Error al guardar el usuario en la base de datos. Por favor, inténtalo de nuevo.");
         } else {
           setError(error.message);
         }
@@ -248,6 +261,29 @@ export function SignUpForm({ className }: SignUpFormProps) {
               showValidationStyles && "was-validated",
             )}
           >
+            {/* Cédula de Identidad */}
+            <div className="space-y-1 group/field">
+              <div className="relative">
+                <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 transition-colors [.was-validated_&]:group-has-[:invalid]/field:text-red-500" />
+                <Input
+                  id="cedula"
+                  type="text"
+                  placeholder="Número de Cédula"
+                  maxLength={10}
+                  className="pl-10 bg-gray-50 border-gray-100 text-black rounded-xl h-12 focus-visible:ring-[#0d9488] transition-all [.was-validated_&]:invalid:border-red-500 [.was-validated_&]:invalid:bg-red-5/30"
+                  required
+                  value={cedula}
+                  onChange={(e) => {
+                    const valueClean = e.target.value.replace(/[^0-9]/g, "");
+                    setCedula(valueClean);
+                  }}
+                />
+              </div>
+              <p className="hidden text-[10px] text-red-500 font-medium pl-1 [.was-validated_&]:group-has-[:invalid]/field:block">
+                El número de cédula es obligatorio y debe contener solo números.
+              </p>
+            </div>
+
             {/* Nombre */}
             <div className="space-y-1 group/field">
               <div className="relative">
@@ -328,7 +364,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
                   id="celular"
                   type="tel" // Tipo telefónico nativo
                   placeholder="Celular"
-                  maxLength={9} // Limita longitud máxima razonable
+                  maxLength={10} // Limita longitud máxima razonable
                   className="pl-10 bg-gray-50 border-gray-100 text-black rounded-xl h-12 focus-visible:ring-[#0d9488] transition-all [.was-validated_&]:invalid:border-red-500 [.was-validated_&]:invalid:bg-red-50/30"
                   required
                   value={celular}
