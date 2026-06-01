@@ -46,7 +46,7 @@ export function LoginForm({
         .maybeSingle(); // Evita lanzar excepciones si no encuentra nada
 
       if (dbError) {
-        console.log("Error al consultar el usuario en la base de datos:", dbError);
+        console.error("Error al consultar el usuario en la base de datos:", dbError);
         throw new Error("Error al verificar las credenciales en el sistema.");
       }
 

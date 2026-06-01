@@ -13,7 +13,13 @@ import {
   ShieldAlert // Icono ideal para administración, aprobación y roles
 } from "lucide-react";
 
-export function Sidebar() {
+// Corregida la declaración limpia de la interfaz de TypeScript
+interface SidebarProps {
+  cantidadPendientes?: number;
+}
+
+// Corregido aquí: pasamos 'cantidadPendientes' destructurado y con su tipo correspondiente
+export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
   // Estado para controlar si el sidebar está comprimido o no
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -108,13 +114,30 @@ export function Sidebar() {
           )}
           <Link 
             href="/protected/usuarios" 
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400 transition-all ${
-              isCollapsed ? "justify-center" : ""
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400 transition-all justify-between ${
+              isCollapsed ? "justify-center relative" : ""
             }`}
             title="Aprobaciones / Roles"
           >
-            <ShieldAlert className="h-4 w-4 shrink-0" />
-            {!isCollapsed && <span className="animate-fadeIn">Aprobaciones Pendientes</span>}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                {/* Badge flotante pequeño solo cuando el menú está colapsado y hay elementos */}
+                {isCollapsed && cantidadPendientes > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-white dark:border-slate-900 animate-scaleIn">
+                    {cantidadPendientes}
+                  </span>
+                )}
+              </div>
+              {!isCollapsed && <span className="animate-fadeIn">Aprobaciones Pendientes</span>}
+            </div>
+
+            {/* Badge clásico lateral solo cuando el menú está expandido */}
+            {!isCollapsed && cantidadPendientes > 0 && (
+              <span className="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 font-bold px-2 py-0.5 rounded-full text-[10px] min-w-[18px] text-center animate-fadeIn">
+                {cantidadPendientes}
+              </span>
+            )}
           </Link>
         </div>
 

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
-import { UserCheck, Phone, Search, Fingerprint, User, Activity } from "lucide-react";
+import { UserCheck, UserX, Phone, Search, Fingerprint, User, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Usuario {
   id: string;
@@ -20,9 +21,9 @@ interface Usuario {
 interface Props {
   usuariosIniciales?: Usuario[];
   adminId?: string;
-  onCambiarRol: (id: string, rolId: string) => Promise<void>;
-  onConcederAcceso: (id: string) => Promise<void>;
-  onRechazarAcceso: (id: string) => Promise<void>; 
+  onCambiarRol: (id: string, rolId: string, ...args: unknown[]) => Promise<unknown>;
+  onConcederAcceso: (id: string, ...args: unknown[]) => Promise<unknown>;
+  onRechazarAcceso: (id: string) => Promise<string>;
 }
 
 export default function UsuariosAdminClient({ 
@@ -42,7 +43,7 @@ export default function UsuariosAdminClient({
   const [rolSeleccionado, setRolSeleccionado] = useState<string>("");
   const [isPending, startTransition] = useTransition();
 
-  // 🔄 1. Sincroniza el usuario seleccionado cuando la data fresca llega del servidor
+  // Sincroniza el usuario seleccionado cuando la data fresca llega del servidor
   useEffect(() => {
     if (solicitudesPendientes.length > 0) {
       const todaviaExiste = solicitudesPendientes.find(u => u.id === usuarioSeleccionado?.id);
@@ -56,9 +57,9 @@ export default function UsuariosAdminClient({
       setUsuarioSeleccionado(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solicitudesPendientes]); // 👈 Ahora pasamos la referencia memorizada de forma segura
+  }, [solicitudesPendientes]); // Ahora pasamos la referencia memorizada de forma segura
 
-  // 🔄 2. Sincroniza el select del rol corporativo cada vez que cambia el usuario auditado
+  // Sincroniza el select del rol corporativo cada vez que cambia el usuario auditado
   useEffect(() => {
     if (usuarioSeleccionado) {
       setRolSeleccionado(usuarioSeleccionado.rol_id || "");
@@ -76,21 +77,40 @@ export default function UsuariosAdminClient({
   const handleAprobar = () => {
     if (!usuarioSeleccionado) return;
     startTransition(async () => {
-      await onCambiarRol(usuarioSeleccionado.id, rolSeleccionado);
-      await onConcederAcceso(usuarioSeleccionado.id);
-      
-      const restantes = solicitudesFiltradas.filter(u => u.id !== usuarioSeleccionado.id);
-      setUsuarioSeleccionado(restantes.length > 0 ? restantes[0] : null);
+      try {
+        await onCambiarRol(usuarioSeleccionado.id, rolSeleccionado);
+        await onConcederAcceso(usuarioSeleccionado.id);
+        
+        const restantes = solicitudesFiltradas.filter(u => u.id !== usuarioSeleccionado.id);
+        setUsuarioSeleccionado(restantes.length > 0 ? restantes[0] : null);
+      } catch (error) {
+        console.error("❌ Error al aprobar usuario en servidor:", error);
+      }
     });
   };
 
   const handleRechazar = () => {
     if (!usuarioSeleccionado) return;
+    
     startTransition(async () => {
-      await onRechazarAcceso(usuarioSeleccionado.id);
-      
-      const restantes = solicitudesFiltradas.filter(u => u.id !== usuarioSeleccionado.id);
-      setUsuarioSeleccionado(restantes.length > 0 ? restantes[0] : null);
+      try {
+        // Capturamos el mensaje que retorna el servidor si todo sale bien
+        const mensajeExito = await onRechazarAcceso(usuarioSeleccionado.id);
+        
+        // Se lo pasamos al toast de éxito
+        toast.success(mensajeExito || "Acción realizada con éxito");
+        
+        // Limpiamos la lista local
+        const restantes = solicitudesPendientes.filter(u => u.id !== usuarioSeleccionado.id);
+        setUsuarioSeleccionado(restantes.length > 0 ? restantes[0] : null);
+        
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Error desconocido";
+        console.error("❌ Error al rechazar usuario en servidor:", errorMessage);
+        
+        // El toast de error se queda igual por si falla la red o Postgres
+        toast.error(`Error al rechazar: ${errorMessage}`);
+      }
     });
   };
 
@@ -186,23 +206,20 @@ export default function UsuariosAdminClient({
                         (() => {
                           const fecha = new Date(usuarioSeleccionado.created_at);
                           
-                          // Si por alguna razón la fecha no es válida
                           if (isNaN(fecha.getTime())) return "Fecha inválida";
 
-                          // Formato limpio: "25 de mayo de 2026"
                           const fechaFormateada = fecha.toLocaleDateString("es-EC", {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
                           });
 
-                          // Formato de hora manual para evitar los bugs de AM/PM de JavaScript
                           let horas = fecha.getHours();
                           const minutos = fecha.getMinutes().toString().padStart(2, "0");
                           const ampm = horas >= 12 ? "PM" : "AM";
                           
                           horas = horas % 12;
-                          horas = horas ? horas : 12; // El formato '0' horas pasaría a ser '12'
+                          horas = horas ? horas : 12;
 
                           return `${fechaFormateada}, ${horas}:${minutos} ${ampm}`;
                         })()
@@ -220,7 +237,6 @@ export default function UsuariosAdminClient({
                   <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Información Adicional del Registro</h3>
                 </div>
 
-                {/* Cambiamos a grid-cols-2 en pantallas medianas para que entren los 4 campos perfectamente */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
                   {/* Input de Nombre de Usuario (Username) */}
@@ -236,7 +252,7 @@ export default function UsuariosAdminClient({
                     />
                   </div>
 
-                  {/* Estado de la Solicitud (Badge dinámico dentro de un contenedor estéril para mantener alineación) */}
+                  {/* Estado de la Solicitud */}
                   <div className="space-y-1.5">
                     <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
                       <Activity className="h-3 w-3 text-slate-400 dark:text-slate-500" /> Estado de Solicitud
@@ -302,12 +318,12 @@ export default function UsuariosAdminClient({
                   </select>
                 </div>
 
-                <div className="flex gap-3 pt-3">
+                <div className="flex flex-col sm:flex-row gap-3 pt-3">
                   <button
                     type="button"
                     disabled={isPending || !rolSeleccionado}
                     onClick={handleAprobar}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-bold h-11 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
                   >
                     <UserCheck className="h-4 w-4" />
                     Aprobar y Dar Acceso
@@ -317,8 +333,9 @@ export default function UsuariosAdminClient({
                     type="button"
                     disabled={isPending}
                     onClick={handleRechazar}
-                    className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold h-11 px-5 rounded-xl transition-all active:scale-95"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all duration-200 active:scale-[0.98]"
                   >
+                    <UserX className="h-4 w-4" />
                     Rechazar Solicitud
                   </button>
                 </div>
