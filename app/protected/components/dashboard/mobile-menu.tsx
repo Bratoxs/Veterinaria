@@ -23,11 +23,11 @@ export function MobileMenu({ cantidadPendientes = 0 }: MobileMenuProps) {
   const handleLinkClick = () => setIsOpen(false);
 
   return (
-    <div className="md:hidden relative">
+    <div className="md:hidden">
       {/* Botón del menú hamburguesa */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors relative" 
+        className="p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors relative z-50" 
         title={isOpen ? "Cerrar menú" : "Abrir menú"}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -38,98 +38,118 @@ export function MobileMenu({ cantidadPendientes = 0 }: MobileMenuProps) {
         )}
       </button>
 
-      {/* Menú desplegable móvil */}
-      {isOpen && (
-        <>
-          {/* Capa oscura transparente para cerrar el menú al tocar fuera */}
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" onClick={handleLinkClick} />
-          
-          {/* Contenedor flotante del menú */}
-          <div className="fixed top-16 left-4 w-72 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col gap-1 rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-4 duration-200">
-            
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 mb-2">
-              Módulos
+      {/* CAPA OSCURA TRASLÚCIDA (Backdrop) */}
+      <div 
+        onClick={handleLinkClick}
+        className={`fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`} 
+      />
+      
+      {/* MENU LATERAL ESTILO GEMINI (Sidebar completo) */}
+      <div 
+        className={`fixed top-0 left-0 bottom-0 w-80 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col gap-1 z-50 transition-transform duration-300 ease-in-out transform ${
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+      >
+        {/* Encabezado dentro del Sidebar Móvil */}
+        <div className="h-14 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 mb-4 shrink-0">
+          <Link href="/protected" onClick={handleLinkClick} className="text-[#0d9488] font-bold text-lg tracking-wider flex items-center gap-2">
+            <span>🐾</span> VetCare
+          </Link>
+          {/* Botón opcional para cerrar dentro del menú si el usuario quiere */}
+          <button 
+            onClick={handleLinkClick}
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Zona de navegación scrollable por si hay muchas opciones */}
+        <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-2 mb-2">
+            Módulos
+          </p>
+
+          {/* Dashboard */}
+          <Link 
+            href="/protected" 
+            onClick={handleLinkClick}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold bg-teal-50/60 dark:bg-teal-950/30 text-[#0d9488] dark:text-teal-400 transition-colors"
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            <span>Dashboard</span>
+          </Link>
+
+          {/* Mascotas */}
+          <Link 
+            href="/protected/mascotas" 
+            onClick={handleLinkClick}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            <PawPrint className="h-4 w-4 shrink-0" />
+            <span>Pacientes / Mascotas</span>
+          </Link>
+
+          {/* Citas */}
+          <Link 
+            href="/protected/citas" 
+            onClick={handleLinkClick}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            <Calendar className="h-4 w-4 shrink-0" />
+            <span>Agenda de Citas</span>
+          </Link>
+
+          {/* Inventario */}
+          <Link 
+            href="/protected/inventario" 
+            onClick={handleLinkClick}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            <span>Inventario / Stock</span>
+          </Link>
+
+          {/* Administración */}
+          <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-800/60">
+            <p className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider pl-2 mb-2">
+              Administración
             </p>
-
-            {/* Dashboard */}
             <Link 
-              href="/protected" 
+              href="/protected/usuarios" 
               onClick={handleLinkClick}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-teal-50/60 dark:bg-teal-950/30 text-[#0d9488] dark:text-teal-400"
+              className="flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
             >
-              <LayoutDashboard className="h-4 w-4 shrink-0" />
-              <span>Dashboard</span>
+              <div className="flex items-center gap-3">
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                <span>Aprobaciones Pendientes</span>
+              </div>
+              
+              {/* El círculo numérico */}
+              {cantidadPendientes > 0 && (
+                <span className="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 font-bold px-2.5 py-0.5 rounded-full text-[10px] min-w-[20px] text-center">
+                  {cantidadPendientes}
+                </span>
+              )}
             </Link>
-
-            {/* Mascotas */}
-            <Link 
-              href="/protected/mascotas" 
-              onClick={handleLinkClick}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
-            >
-              <PawPrint className="h-4 w-4 shrink-0" />
-              <span>Pacientes / Mascotas</span>
-            </Link>
-
-            {/* Citas */}
-            <Link 
-              href="/protected/citas" 
-              onClick={handleLinkClick}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
-            >
-              <Calendar className="h-4 w-4 shrink-0" />
-              <span>Agenda de Citas</span>
-            </Link>
-
-            {/* Inventario */}
-            <Link 
-              href="/protected/inventario" 
-              onClick={handleLinkClick}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
-            >
-              <Package className="h-4 w-4 shrink-0" />
-              <span>Inventario / Stock</span>
-            </Link>
-
-            {/* Administración */}
-            <div className="pt-2">
-              <p className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider pl-2 mb-2">
-                Administración
-              </p>
-              <Link 
-                href="/protected/usuarios" 
-                onClick={handleLinkClick}
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400"
-              >
-                <div className="flex items-center gap-3">
-                  <ShieldAlert className="h-4 w-4 shrink-0" />
-                  <span>Aprobaciones Pendientes</span>
-                </div>
-                
-                {/* El círculo con el número de solicitudes en el móvil */}
-                {cantidadPendientes > 0 && (
-                  <span className="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 font-bold px-2.5 py-0.5 rounded-full text-[10px] min-w-[20px] text-center">
-                    {cantidadPendientes}
-                  </span>
-                )}
-              </Link>
-            </div>
-
-            {/* Configuración */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-1">
-              <Link 
-                href="/protected/ajustes" 
-                onClick={handleLinkClick}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
-              >
-                <Settings className="h-4 w-4 shrink-0" />
-                <span>Ajustes del Sistema</span>
-              </Link>
-            </div>
-
           </div>
-        </>
-      )}
+        </nav>
+
+        {/* Configuración fija en la parte inferior */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60 shrink-0">
+          <Link 
+            href="/protected/ajustes" 
+            onClick={handleLinkClick}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            <span>Ajustes del Sistema</span>
+          </Link>
+        </div>
+
+      </div>
     </div>
   );
 }
