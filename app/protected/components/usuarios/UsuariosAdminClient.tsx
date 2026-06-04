@@ -5,6 +5,7 @@ import { UserCheck, UserX, Phone, Search, Fingerprint, User, Activity, ArrowLeft
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Definimos la estructura de usuario que viene de Supabase
 interface Usuario {
   id: string;
   cedula: string;
@@ -18,24 +19,30 @@ interface Usuario {
   created_at: string | null;
 }
 
+// Definimos la estructura del Rol que viene de Supabase
+interface Rol {
+  id: string;
+  nombre: string;
+}
+
 interface Props {
-  usuariosIniciales?: Usuario[];
+  usuarios?: Usuario[];
+  roles: Rol[];
   adminId?: string;
-  onCambiarRol: (id: string, rolId: string, ...args: unknown[]) => Promise<unknown>;
-  onConcederAcceso: (id: string, ...args: unknown[]) => Promise<unknown>;
+  onConcederAcceso: (id: string, rolId: string) => Promise<string>;
   onRechazarAcceso: (id: string) => Promise<string>;
 }
 
 export default function UsuariosAdminClient({ 
-  usuariosIniciales = [], 
-  onCambiarRol, 
+  usuarios = [], 
+  roles = [],
   onConcederAcceso,
   onRechazarAcceso 
 }: Props) {
   
   const solicitudesPendientes = useMemo(() => {
-    return usuariosIniciales.filter(u => u.estado === "pendiente");
-  }, [usuariosIniciales]);
+    return usuarios.filter(u => u.estado === "pendiente");
+  }, [usuarios]);
 
   const [busqueda, setBusqueda] = useState("");
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
@@ -85,8 +92,7 @@ export default function UsuariosAdminClient({
     if (!usuarioSeleccionado) return;
     startTransition(async () => {
       try {
-        await onCambiarRol(usuarioSeleccionado.id, rolSeleccionado);
-        await onConcederAcceso(usuarioSeleccionado.id);
+        await onConcederAcceso(usuarioSeleccionado.id, rolSeleccionado);
         
         const restantes = solicitudesFiltradas.filter(u => u.id !== usuarioSeleccionado.id);
         if (restantes.length > 0) {
@@ -328,9 +334,13 @@ export default function UsuariosAdminClient({
                     className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-3 font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer focus:border-teal-500 dark:focus:border-teal-600 transition-colors text-xs shadow-sm"
                   >
                     <option value="">⚠️ Selecciona un rol antes de aprobar</option>
-                    <option value="ID_REAL_VETERINARIO">👨‍⚕️ Veterinario</option>
-                    <option value="ID_REAL_ADMINISTRADOR">👑 Administrador</option>
-                    <option value="ID_REAL_RECEPCIONISTA">📋 Recepcionista</option>
+                    
+                    {/* Mapeo dinámico desde la tabla de roles en Supabase */}
+                    {roles.map((rol) => (
+                      <option key={rol.id} value={rol.id}>
+                        💼 {rol.nombre}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

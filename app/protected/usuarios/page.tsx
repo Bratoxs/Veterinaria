@@ -1,7 +1,7 @@
 import UsuariosAdminClient from "../components/usuarios/UsuariosAdminClient";
 import { createClient } from "@/lib/supabase/server";
 // Importas tus acciones desde donde las tengas guardadas:
-import { handleCambiarRol, handleConcederAcceso, handleRechazarAcceso } from "../components/usuarios/actions"; 
+import { handleConcederAcceso, handleRechazarAcceso } from "../components/usuarios/actions"; 
 
 export default async function UsuariosAdminPage() {
   const supabase = await createClient();
@@ -12,10 +12,20 @@ export default async function UsuariosAdminPage() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  const { data: roles, error: errorRoles } = await supabase
+    .from("roles")
+    .select("id, nombre")
+    .neq("nombre", "Administrador") // Excluimos el rol de Administrador para que no se pueda asignar desde aquí
+    .order("nombre", { ascending: true });
+
+  if (errorRoles) {
+    console.error("❌ Error al cargar los roles en el servidor:", errorRoles.message);
+  }
+
   return (
     <UsuariosAdminClient
-      usuariosIniciales={usuarios || []}
-      onCambiarRol={handleCambiarRol}
+      usuarios={usuarios || []}
+      roles={roles || []}
       onConcederAcceso={handleConcederAcceso}
       onRechazarAcceso={handleRechazarAcceso}
     />
