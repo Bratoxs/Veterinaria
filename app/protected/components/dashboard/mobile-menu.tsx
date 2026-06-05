@@ -10,7 +10,8 @@ import {
   Calendar, 
   Package, 
   Settings, 
-  ShieldAlert 
+  ShieldAlert,
+  Users
 } from "lucide-react";
 
 interface MobileMenuProps {
@@ -118,7 +119,7 @@ export function MobileMenu({ cantidadPendientes = 0 }: MobileMenuProps) {
               Administración
             </p>
             <Link 
-              href="/protected/usuarios" 
+              href="/protected/accesos" 
               onClick={handleLinkClick}
               className="flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
             >
@@ -133,6 +134,16 @@ export function MobileMenu({ cantidadPendientes = 0 }: MobileMenuProps) {
                   {cantidadPendientes}
                 </span>
               )}
+            </Link>
+
+            {/* Enlace 2: Personal de Veterinaria 🚀 */}
+            <Link 
+              href="/protected/usuarios" 
+              onClick={handleLinkClick}
+              className="flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-teal-50 dark:hover:bg-teal-950/20 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              <span>Personal de Veterinaria</span>
             </Link>
           </div>
         </nav>
