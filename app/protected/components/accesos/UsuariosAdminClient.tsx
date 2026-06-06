@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useTransition, useEffect, useMemo } from "react";
-import { UserCheck, UserX, Phone, Search, Fingerprint, User, Activity, ArrowLeft, Loader2 } from "lucide-react";
+import { UserCheck, UserX, Phone, Search, Fingerprint, User, Activity, ArrowLeft, Loader2, Mail, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Definimos la estructura de usuario que viene de Supabase
 interface Usuario {
   id: string;
   cedula: string;
@@ -19,7 +18,6 @@ interface Usuario {
   created_at: string | null;
 }
 
-// Definimos la estructura del Rol que viene de Supabase
 interface Rol {
   id: string;
   nombre: string;
@@ -49,27 +47,32 @@ export default function UsuariosAdminClient({
   const [rolSeleccionado, setRolSeleccionado] = useState<string>("");
   const [isPending, startTransition] = useTransition();
 
-  // Controla si en móvil se forzó la vista del detalle
   const [verDetalleMovil, setVerDetalleMovil] = useState(false);
 
-  // Sincroniza el usuario seleccionado cuando la data fresca llega del servidor
+  // 1. Sincroniza datos si mutan en el servidor
+  useEffect(() => {
+    if (usuarioSeleccionado) {
+      const todaviaExiste = solicitudesPendientes.find(u => u.id === usuarioSeleccionado.id);
+      if (todaviaExiste && JSON.stringify(todaviaExiste) !== JSON.stringify(usuarioSeleccionado)) {
+        setUsuarioSeleccionado(todaviaExiste);
+      }
+    }
+  }, [solicitudesPendientes, usuarioSeleccionado]);
+
+  // 2. Autoselecciona la primera solicitud activa
   useEffect(() => {
     if (solicitudesPendientes.length > 0) {
       const todaviaExiste = solicitudesPendientes.find(u => u.id === usuarioSeleccionado?.id);
-      
       if (!usuarioSeleccionado || !todaviaExiste) {
         setUsuarioSeleccionado(solicitudesPendientes[0]);
-      } else if (JSON.stringify(todaviaExiste) !== JSON.stringify(usuarioSeleccionado)) {
-        setUsuarioSeleccionado(todaviaExiste);
       }
     } else {
       setUsuarioSeleccionado(null);
       setVerDetalleMovil(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solicitudesPendientes]);
+  }, [solicitudesPendientes, usuarioSeleccionado]);
 
-  // Sincroniza el select del rol corporativo cada vez que cambia el usuario auditado
+  // 3. Sincroniza el select del rol corporativo
   useEffect(() => {
     if (usuarioSeleccionado) {
       setRolSeleccionado(usuarioSeleccionado.rol_id || "");
@@ -85,7 +88,7 @@ export default function UsuariosAdminClient({
 
   const handleSeleccionarUsuario = (usr: Usuario) => {
     setUsuarioSeleccionado(usr);
-    setVerDetalleMovil(true); // Abre el detalle a pantalla completa en celulares
+    setVerDetalleMovil(true);
   };
 
   const handleAprobar = () => {
@@ -103,7 +106,7 @@ export default function UsuariosAdminClient({
         }
         toast.success("Usuario aprobado y acceso concedido con éxito");
       } catch (error) {
-        console.error("❌ Error al aprobar usuario en servidor:", error);
+        console.error("❌ Error al aprobar usuario:", error);
         toast.error("Hubo un problema al procesar la aprobación");
       }
     });
@@ -126,7 +129,7 @@ export default function UsuariosAdminClient({
         }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : "Error desconocido";
-        console.error("❌ Error al rechazar usuario en servidor:", errorMessage);
+        console.error("❌ Error al rechazar usuario:", errorMessage);
         toast.error(`Error al rechazar: ${errorMessage}`);
       }
     });
@@ -135,7 +138,6 @@ export default function UsuariosAdminClient({
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto text-xs font-sans text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-950/20 min-h-screen">
       
-      {/* Encabezado contextual para saber exactamente dónde se encuentra el administrador */}
       <div className="space-y-1">
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Control de Accesos
@@ -147,7 +149,7 @@ export default function UsuariosAdminClient({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* COLUMNA IZQUIERDA: LISTA (Se oculta en móvil si verDetalleMovil es true) */}
+        {/* COLUMNA IZQUIERDA: LISTA */}
         <div className={cn(
           "lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4",
           verDetalleMovil ? "hidden lg:block" : "block"
@@ -197,11 +199,8 @@ export default function UsuariosAdminClient({
                       <p className="text-slate-400 dark:text-slate-500 text-[11px] truncate">
                         {usr.correo}
                       </p>
-                      <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5 flex items-center gap-1">
-                        <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400">C.I:</span> 
-                        <span className="font-mono bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-xs">
-                          {usr.cedula || "N/A"}
-                        </span>
+                      <p className="text-slate-500 dark:text-slate-400 text-[10px] mt-1 font-mono">
+                        C.I: {usr.cedula || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -213,162 +212,183 @@ export default function UsuariosAdminClient({
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: DETALLE (Se oculta en móvil si verDetalleMovil es false) */}
+        {/* COLUMNA DERECHA: TARJETA UNIFICADA */}
         <div className={cn(
-          "lg:col-span-7 space-y-4",
+          "lg:col-span-7",
           verDetalleMovil ? "block" : "hidden lg:block"
         )}>
           
           {usuarioSeleccionado ? (
-            <>
-              {/* Botón de regreso exclusivo para móviles */}
-              <button
-                onClick={() => setVerDetalleMovil(false)}
-                className="lg:hidden flex items-center gap-2 text-xs font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-2 rounded-xl border border-teal-100 dark:border-teal-900 mb-2 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Volver a la lista de solicitudes
-              </button>
+            <div className="relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all">
+              
+              {/* Overlay de Carga Unificado */}
+              {isPending && (
+                <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-20 transition-all">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-teal-400 bg-white dark:bg-slate-950 shadow-md border border-slate-100 dark:border-slate-800 px-4 py-2.5 rounded-xl">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Procesando cambios...
+                  </div>
+                </div>
+              )}
 
-              {/* Tarjeta Perfil Superior */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-5 relative">
+              {/* Cabecera Interna de la Tarjeta */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/10">
                 
-                {/* Overlay difuminado cuando el formulario procesa del lado del servidor (isPending) */}
-                {isPending && (
-                  <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[1px] rounded-2xl flex items-center justify-center z-10">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 dark:text-teal-400 bg-white dark:bg-slate-950 shadow-md border border-slate-100 dark:border-slate-800 px-4 py-2 rounded-xl">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Procesando cambios...
+                {/* Botón de regreso exclusivo para móviles */}
+                <button
+                  type="button"
+                  onClick={() => setVerDetalleMovil(false)}
+                  className="lg:hidden flex items-center gap-2 text-xs font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-2 rounded-xl border border-teal-100 dark:border-teal-900 mb-4 transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver a la lista
+                </button>
+
+                <div className="flex flex-col sm:flex-row items-center gap-5">
+                  <div className="h-14 w-14 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 text-lg font-bold flex items-center justify-center uppercase shrink-0 ring-4 ring-teal-500/5">
+                    {usuarioSeleccionado.nombre?.[0] || ""}{usuarioSeleccionado.apellido?.[0] || ""}
+                  </div>
+                  
+                  <div className="text-center sm:text-left flex-1 min-w-0 space-y-0.5">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 capitalize truncate">
+                      {usuarioSeleccionado.nombre} {usuarioSeleccionado.apellido}
+                    </h2>
+                    
+                    <div className="flex flex-col text-slate-400 dark:text-slate-500 text-[11px] space-y-1">
+                      <span className="flex items-center justify-center sm:justify-start gap-1 font-mono truncate">
+                        <Mail className="h-3 w-3 shrink-0 text-slate-400/80" /> {usuarioSeleccionado.correo}
+                      </span>
+                      
+                      <p className="text-slate-400 dark:text-slate-500 text-[10px] mt-1 flex items-center justify-center sm:justify-start gap-1">
+                        <Calendar className="h-3 w-3 shrink-0 text-slate-400/80" />
+                        <span>Registrado: </span>
+                        <span className="font-medium text-slate-600 dark:text-slate-400">
+                          {usuarioSeleccionado.created_at ? (
+                            (() => {
+                              const fecha = new Date(usuarioSeleccionado.created_at);
+                              if (isNaN(fecha.getTime())) return "Fecha inválida";
+                              const fechaFormateada = fecha.toLocaleDateString("es-EC", {
+                                day: "numeric", month: "long", year: "numeric",
+                              });
+                              let horas = fecha.getHours();
+                              const minutos = fecha.getMinutes().toString().padStart(2, "0");
+                              const ampm = horas >= 12 ? "PM" : "AM";
+                              horas = horas % 12 || 12;
+                              return `${fechaFormateada}, ${horas}:${minutos} ${ampm}`;
+                            })()
+                          ) : "Fecha no disponible"}
+                        </span>
+                      </p>
                     </div>
                   </div>
-                )}
-
-                <div className="h-16 w-16 rounded-full bg-teal-600 text-xl font-bold text-white flex items-center justify-center uppercase shrink-0">
-                  {usuarioSeleccionado.nombre?.[0] || "U"}{usuarioSeleccionado.apellido?.[0] || ""}
-                </div>
-                <div className="text-center sm:text-left">
-                  <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 capitalize">
-                    {usuarioSeleccionado.nombre} {usuarioSeleccionado.apellido}
-                  </h2>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs font-mono">{usuarioSeleccionado.correo}</p>
-                
-                  <p className="text-slate-400 dark:text-slate-500 text-[10px] mt-1">
-                    <span>Registrado: </span>
-                    <span className="font-medium text-slate-600 dark:text-slate-400">
-                      {usuarioSeleccionado.created_at ? (
-                        (() => {
-                          const fecha = new Date(usuarioSeleccionado.created_at);
-                          if (isNaN(fecha.getTime())) return "Fecha inválida";
-                          const fechaFormateada = fecha.toLocaleDateString("es-EC", {
-                            day: "numeric", month: "long", year: "numeric",
-                          });
-                          let horas = fecha.getHours();
-                          const minutos = fecha.getMinutes().toString().padStart(2, "0");
-                          const ampm = horas >= 12 ? "PM" : "AM";
-                          horas = horas % 12 || 12;
-                          return `${fechaFormateada}, ${horas}:${minutos} ${ampm}`;
-                        })()
-                      ) : "Fecha no disponible"}
-                    </span>
-                  </p>
                 </div>
               </div>
 
-              {/* Información Adicional */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">Información de Registro</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Cuerpo de la Tarjeta Unificada */}
+              <div className="p-6 space-y-6">
+                
+                {/* Sección 1: Información de Registro */}
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Información de Registro
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                        <User className="h-3 w-3 text-slate-400" /> Nombre de Usuario
+                      </label>
+                      <input
+                        type="text" readOnly value={usuarioSeleccionado.username || "No provisto"}
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-slate-700 dark:text-slate-300 font-medium cursor-default focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                        <Activity className="h-3 w-3 text-slate-400" /> Estado de Solicitud
+                      </label>
+                      <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 flex items-center cursor-default">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                          {usuarioSeleccionado.estado}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                        <Fingerprint className="h-3 w-3 text-slate-400" /> Cédula de Identidad
+                      </label>
+                      <input
+                        type="text" readOnly value={usuarioSeleccionado.cedula || "No provisto"}
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-slate-700 dark:text-slate-300 font-mono font-medium cursor-default focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-slate-400" /> Teléfono Celular
+                      </label>
+                      <input
+                        type="text" readOnly value={usuarioSeleccionado.celular || "No provisto"}
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-slate-700 dark:text-slate-300 font-medium cursor-default focus:outline-none"
+                      />
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Divisor Interno Suave */}
+                <div className="border-t border-slate-100 dark:border-slate-800/60" />
+
+                {/* Sección 2: Configuración de Acceso */}
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Configuración de Acceso
+                  </h3>
                   
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                      <User className="h-3 w-3 text-slate-400 dark:text-slate-500" /> Nombre de Usuario
-                    </label>
-                    <input
-                      type="text" readOnly value={usuarioSeleccionado.username || "No provisto"}
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-slate-700 dark:text-slate-300 font-medium cursor-default focus:outline-none"
-                    />
+                    <label className="font-bold text-slate-700 dark:text-slate-300 block">Asignar Rol Corporativo</label>
+                    <select
+                      value={rolSeleccionado}
+                      onChange={(e) => setRolSeleccionado(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-3 font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer focus:border-teal-500 dark:focus:border-teal-600 transition-colors text-xs"
+                    >
+                      <option value="">Selecciona un rol antes de aprobar</option>
+                      {roles.map((rol) => (
+                        <option key={rol.id} value={rol.id}>
+                          {rol.nombre}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                      <Activity className="h-3 w-3 text-slate-400 dark:text-slate-500" /> Estado de Solicitud
-                    </label>
-                    <div className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 flex items-center cursor-default">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
-                        {usuarioSeleccionado.estado}
-                      </span>
-                    </div>
-                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-3">
+                    <button
+                      type="button"
+                      disabled={isPending || !rolSeleccionado}
+                      onClick={handleAprobar}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      <UserCheck className="h-4 w-4" />
+                      Aprobar y Dar Acceso
+                    </button>
 
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                      <Fingerprint className="h-3 w-3 text-slate-400 dark:text-slate-500" /> Cédula de Identidad
-                    </label>
-                    <input
-                      type="text" readOnly value={usuarioSeleccionado.cedula || "No provisto"}
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-slate-700 dark:text-slate-300 font-mono font-medium cursor-default focus:outline-none"
-                    />
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={handleRechazar}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      <UserX className="h-4 w-4" />
+                      Rechazar Solicitud
+                    </button>
                   </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-slate-400 dark:text-slate-500" /> Teléfono Celular
-                    </label>
-                    <input
-                      type="text" readOnly value={usuarioSeleccionado.celular || "No provisto"}
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-4 text-slate-700 dark:text-slate-300 font-medium cursor-default focus:outline-none"
-                    />
-                  </div>
-
                 </div>
+
               </div>
-
-              {/* Acciones */}
-              <div className="bg-emerald-50/10 dark:bg-emerald-950/10 border border-emerald-500/20 dark:border-emerald-500/30 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">Configuración de Acceso</h3>
-                
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block">Asignar Rol Corporativo</label>
-                  <select
-                    value={rolSeleccionado}
-                    onChange={(e) => setRolSeleccionado(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl h-11 px-3 font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer focus:border-teal-500 dark:focus:border-teal-600 transition-colors text-xs shadow-sm"
-                  >
-                    <option value="">⚠️ Selecciona un rol antes de aprobar</option>
-                    
-                    {/* Mapeo dinámico desde la tabla de roles en Supabase */}
-                    {roles.map((rol) => (
-                      <option key={rol.id} value={rol.id}>
-                        💼 {rol.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-3">
-                  <button
-                    type="button"
-                    disabled={isPending || !rolSeleccionado}
-                    onClick={handleAprobar}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    <UserCheck className="h-4 w-4" />
-                    Aprobar y Dar Acceso
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={handleRechazar}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    <UserX className="h-4 w-4" />
-                    Rechazar Solicitud
-                  </button>
-                </div>
-              </div>
-            </>
+            </div>
           ) : (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500 font-medium">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500 font-medium shadow-sm">
               Selecciona un usuario de la lista izquierda para auditar su información.
             </div>
           )}

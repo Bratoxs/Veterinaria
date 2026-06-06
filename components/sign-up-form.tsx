@@ -53,7 +53,7 @@ export function SignUpForm({ className }: SignUpFormProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const router = useRouter();
-  
+
   // Función idéntica a la lógica de Postgres para limpiar caracteres
   const cleanString = (str: string) => {
     return str
@@ -228,7 +228,9 @@ export function SignUpForm({ className }: SignUpFormProps) {
         ) {
           setError("Este correo electrónico ya está registrado.");
         } else if (msg.includes("database error saving new user")) {
-          setError("Error al guardar el usuario en la base de datos. Por favor, inténtalo de nuevo.");
+          setError(
+            "Error al guardar el usuario en la base de datos. Por favor, inténtalo de nuevo.",
+          );
         } else {
           setError(error.message);
         }
@@ -376,7 +378,8 @@ export function SignUpForm({ className }: SignUpFormProps) {
                 />
               </div>
               <p className="hidden text-[10px] text-red-500 font-medium pl-1 [.was-validated_&]:group-has-[:invalid]/field:block">
-                El número de celular es obligatorio para el registro del personal.
+                El número de celular es obligatorio para el registro del
+                personal.
               </p>
             </div>
 
@@ -493,40 +496,50 @@ export function SignUpForm({ className }: SignUpFormProps) {
       {/* MODAL DE CONFIRMACIÓN CON TAILWIND (Se dibuja sobre toda la pantalla) */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] max-w-sm w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] max-w-sm w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-slate-800">
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="bg-amber-50 p-3 rounded-full text-amber-500">
+              {/* Icono de advertencia */}
+              <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-full text-amber-500 dark:text-amber-400">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800">
+
+              {/* Título */}
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
                 Verifica tu correo electrónico
               </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
+
+              {/* Descripción */}
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Por favor, asegúrate de que el correo electrónico ingresado sea
                 correcto antes de continuar con el registro:
               </p>
-              <div className="bg-slate-50 border border-slate-100 px-4 py-2.5 rounded-xl w-full text-sm font-semibold text-slate-700 break-all">
+
+              {/* Contenedor del Correo (Badge) */}
+              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 px-4 py-2.5 rounded-xl w-full text-sm font-semibold text-slate-700 dark:text-slate-300 break-all">
                 {email}
               </div>
-              <p className="text-[10px] text-amber-600 font-medium">
+
+              {/* Recordatorio inferior */}
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
                 Si el correo está mal escrito, no podrás recibir notificaciones.
               </p>
             </div>
 
-            {/* Botones de Acción */}
+            {/* Botones de Acción Adaptados */}
             <div className="flex gap-3 mt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 h-11 rounded-xl font-semibold text-xs transition-all active:scale-95 border-gray-200 dark:border-slate-800"
+                className="flex-1 h-11 rounded-xl font-semibold text-xs transition-all active:scale-95 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 Cancelar y Revisar
               </Button>
+
               <Button
                 type="button"
                 onClick={executeSignUp}
-                className="flex-1 h-11 rounded-xl font-bold bg-[#0d9488] hover:bg-[#0a7a70] text-white text-xs shadow-md shadow-teal-50 transition-all active:scale-95"
+                className="flex-1 h-11 rounded-xl font-bold bg-[#0d9488] hover:bg-[#0a7a70] text-white text-xs shadow-md shadow-teal-50 dark:shadow-none transition-all active:scale-95"
               >
                 Sí, Continuar
               </Button>
