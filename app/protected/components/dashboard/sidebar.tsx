@@ -1,27 +1,25 @@
-"use client"; // 1. Indispensable para usar useState y eventos de click
+// components/Sidebar.tsx
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  PawPrint,
   Calendar,
   Package,
   Settings,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert, // Icono ideal para administración, aprobación y roles
-  Users,
+  ShieldAlert, 
+  FolderHeart, 
+  UserCog      
 } from "lucide-react";
 
-// Corregida la declaración limpia de la interfaz de TypeScript
 interface SidebarProps {
   cantidadPendientes?: number;
 }
 
-// Corregido aquí: pasamos 'cantidadPendientes' destructurado y con su tipo correspondiente
 export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
-  // Estado para controlar si el sidebar está comprimido o no
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -30,20 +28,14 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
-      {/* BOTÓN FLOTANTE PARA COMPRIMIR/EXPANDIR (La Flecha) */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full p-1 text-slate-500 hover:text-[#0d9488] shadow-sm z-50 transition-colors"
         title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
       >
-        {isCollapsed ? (
-          <ChevronRight className="h-4 w-4" />
-        ) : (
-          <ChevronLeft className="h-4 w-4" />
-        )}
+        {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
 
-      {/* CABECERA: LOGO / ICONO */}
       <div
         className={`h-16 flex items-center border-b border-slate-200 dark:border-slate-800 transition-all ${
           isCollapsed ? "justify-center px-0" : "px-6"
@@ -53,15 +45,11 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
           href="/protected"
           className="text-[#0d9488] font-bold text-lg tracking-wider flex items-center gap-2 hover:opacity-90 transition-opacity"
         >
-          <span className="bg-teal-50 dark:bg-teal-950/50 p-1.5 rounded-lg text-base shrink-0">
-            🐾
-          </span>
-          {/* Ocultamos el texto suavemente si está colapsado */}
+          <span className="bg-teal-50 dark:bg-teal-950/50 p-1.5 rounded-lg text-base shrink-0">🐾</span>
           {!isCollapsed && <span className="animate-fadeIn">VetCare</span>}
         </Link>
       </div>
 
-      {/* MENÚ DE NAVEGACIÓN */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         <p
           className={`text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-3 mb-2 transition-opacity ${
@@ -71,7 +59,7 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
           Módulos
         </p>
 
-        {/* Enlace: Dashboard */}
+        {/* Dashboard */}
         <Link
           href="/protected"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-teal-50/60 dark:bg-teal-950/30 text-[#0d9488] dark:text-teal-400 transition-all ${
@@ -83,21 +71,19 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
           {!isCollapsed && <span className="animate-fadeIn">Dashboard</span>}
         </Link>
 
-        {/* Enlace: Mascotas */}
+        {/* Único Acceso Maestro Unificado */}
         <Link
-          href="/protected/mascotas"
+          href="/protected/propietarios"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-all ${
             isCollapsed ? "justify-center" : ""
           }`}
-          title="Pacientes / Mascotas"
+          title="Expedientes Clínicos"
         >
-          <PawPrint className="h-4 w-4 shrink-0" />
-          {!isCollapsed && (
-            <span className="animate-fadeIn">Pacientes / Mascotas</span>
-          )}
+          <FolderHeart className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+          {!isCollapsed && <span className="animate-fadeIn">Expedientes Clínicos</span>}
         </Link>
 
-        {/* Enlace: Citas */}
+        {/* Citas */}
         <Link
           href="/protected/citas"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-all ${
@@ -106,12 +92,10 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
           title="Agenda de Citas"
         >
           <Calendar className="h-4 w-4 shrink-0" />
-          {!isCollapsed && (
-            <span className="animate-fadeIn">Agenda de Citas</span>
-          )}
+          {!isCollapsed && <span className="animate-fadeIn">Agenda de Citas</span>}
         </Link>
 
-        {/* Enlace: Inventario */}
+        {/* Inventario */}
         <Link
           href="/protected/inventario"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 transition-all ${
@@ -120,18 +104,17 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
           title="Inventario / Stock"
         >
           <Package className="h-4 w-4 shrink-0" />
-          {!isCollapsed && (
-            <span className="animate-fadeIn">Inventario / Stock</span>
-          )}
+          {!isCollapsed && <span className="animate-fadeIn">Inventario / Stock</span>}
         </Link>
 
-        {/* NUEVO SECTOR: Gestión del Administrador */}
+        {/* Administración */}
         <div className="pt-2 space-y-1">
           {!isCollapsed && (
             <p className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wider pl-3 mb-2 animate-fadeIn">
               Administración
             </p>
           )}
+          
           <Link
             href="/protected/accesos"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400 transition-all justify-between ${
@@ -142,27 +125,22 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <ShieldAlert className="h-4 w-4 shrink-0" />
-                {/* Badge flotante pequeño solo cuando el menú está colapsado y hay elementos */}
                 {isCollapsed && cantidadPendientes > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-white dark:border-slate-900 animate-scaleIn">
+                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-white dark:border-slate-900">
                     {cantidadPendientes}
                   </span>
                 )}
               </div>
-              {!isCollapsed && (
-                <span className="animate-fadeIn">Aprobaciones Pendientes</span>
-              )}
+              {!isCollapsed && <span className="animate-fadeIn">Aprobaciones Pendientes</span>}
             </div>
 
-            {/* Badge clásico lateral solo cuando el menú está expandido */}
             {!isCollapsed && cantidadPendientes > 0 && (
-              <span className="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 font-bold px-2 py-0.5 rounded-full text-[10px] min-w-[18px] text-center animate-fadeIn">
+              <span className="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 font-bold px-2 py-0.5 rounded-full text-[10px] min-w-[18px] text-center">
                 {cantidadPendientes}
               </span>
             )}
           </Link>
 
-          {/* Enlace 2: Mantenimiento / Personal de la Clínica (¡El nuevo!) */}
           <Link
             href="/protected/usuarios"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-teal-50 dark:hover:bg-teal-950/20 hover:text-teal-600 dark:hover:text-teal-400 transition-all ${
@@ -171,16 +149,13 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
             title="Gestión de Personal"
           >
             <div className="flex items-center gap-3">
-              {/* Puedes usar Users o UserCog importado de lucide-react */}
-              <Users className="h-4 w-4 shrink-0" />
-              {!isCollapsed && (
-                <span className="animate-fadeIn">Personal de Veterinaria</span>
-              )}
+              <UserCog className="h-4 w-4 shrink-0" />
+              {!isCollapsed && <span className="animate-fadeIn">Personal de Veterinaria</span>}
             </div>
           </Link>
         </div>
 
-        {/* Separador de configuración */}
+        {/* Configuración */}
         <div className="pt-4">
           {!isCollapsed && (
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-3 mb-2 animate-fadeIn">
@@ -195,9 +170,7 @@ export function Sidebar({ cantidadPendientes = 0 }: SidebarProps) {
             title="Ajustes del Sistema"
           >
             <Settings className="h-4 w-4 shrink-0" />
-            {!isCollapsed && (
-              <span className="animate-fadeIn">Ajustes del Sistema</span>
-            )}
+            {!isCollapsed && <span className="animate-fadeIn">Ajustes del Sistema</span>}
           </Link>
         </div>
       </nav>
