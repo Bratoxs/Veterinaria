@@ -44,7 +44,7 @@ export default function ProtectedLayout({
             
             <div className="flex-1 w-full">
               {children}
-              <Toaster position="top-right" richColors />
+              <Toaster closeButton position="top-right" richColors />
             </div>
 
             {/* Pie de página */}

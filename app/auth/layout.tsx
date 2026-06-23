@@ -1,4 +1,5 @@
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { Toaster } from "sonner"; // 👈 Ya lo tenías importado, ¡excelente!
 
 export default function AuthLayout({
   children,
@@ -30,6 +31,9 @@ export default function AuthLayout({
           </p>
         </div>
       </footer>
+
+      {/* 🚀 EL INYECTOR GLOBAL DE NOTIFICACIONES CORREGIDO AQUÍ: */}
+      <Toaster closeButton position="top-right" richColors />
 
     </main>
   );

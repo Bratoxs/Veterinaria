@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Propietario, Paciente } from "@/types/veterinaria";
+import { useRouter } from "next/navigation";
 
 interface Props {
   onProcesarPropietario: (datos: Partial<Propietario>) => Promise<Propietario>;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function GestionPacientesClient({ onProcesarPropietario, onGuardarPaciente }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState(1); // 1: Datos Dueño, 2: Mascotas
   const [mostrandoFormMascota, setMostrandoFormMascota] = useState(false);
@@ -44,16 +46,24 @@ export default function GestionPacientesClient({ onProcesarPropietario, onGuarda
   // Acción al dar clic en "Siguiente" (Paso 1)
   const handleSiguientePaso = () => {
     if (!cedula) {
-      toast.error("La cédula es obligatoria.");
+      toast.error("Error", {
+        description: "La cédula es obligatoria.",
+      });
       return;
     } else if(!nombreCompleto) {
-      toast.error("El nombre completo es obligatorio.");
+      toast.error("Error", {
+        description: "El nombre completo es obligatorio.",
+      });
       return;
     } else if(!telefono) {
-      toast.error("El teléfono celular es obligatorio.");
+      toast.error("Error", {
+        description: "El teléfono celular es obligatorio.",
+      });
       return;
     }   else if(!correo) {
-      toast.error("El correo electrónico es obligatorio.");
+      toast.error("Error", {
+        description: "El correo electrónico es obligatorio.",
+      });
       return;
     }
 
@@ -131,11 +141,22 @@ export default function GestionPacientesClient({ onProcesarPropietario, onGuarda
   };
 
   const handleFinalizarProceso = () => {
-    toast.success("Ingreso clínico completado con éxito.");
-    setStep(1);
-    setPropietarioDb(null);
-    setCedula(""); setNombreCompleto(""); setTelefono(""); setCorreo(""); setDireccion("");
-  };
+  // 1. Notificación flotante premium
+  toast.success("Ingreso clínico completado con éxito.");
+  
+  // 2. Limpieza de estados locales del formulario (Tu lógica actual)
+  setStep(1);
+  setPropietarioDb(null);
+  setCedula(""); 
+  setNombreCompleto(""); 
+  setTelefono(""); 
+  setCorreo(""); 
+  setDireccion("");
+  
+  // 3. 🚀 Redirección automática y refresco de caché
+  router.refresh(); // Fuerza a Next.js a traer lo nuevo de Supabase
+  router.push("/protected/propietarios"); // Te devuelve al listado maestro
+};
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6 min-h-screen pb-20 text-xs font-sans text-slate-700 dark:text-slate-300">
@@ -158,7 +179,7 @@ export default function GestionPacientesClient({ onProcesarPropietario, onGuarda
         {isPending && (
           <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-30">
             <div className="flex items-center gap-2 font-bold text-teal-600 bg-white dark:bg-slate-950 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-800">
-              <Loader2 className="h-4 w-4 animate-spin" /> Conectando con Supabase...
+              <Loader2 className="h-4 w-4 animate-spin" /> Registrando información...
             </div>
           </div>
         )}
@@ -233,7 +254,7 @@ export default function GestionPacientesClient({ onProcesarPropietario, onGuarda
                   <p className="text-[10px] text-slate-400 font-medium">Asociación directa mediante clave foránea.</p>
                 </div>
               </div>
-              <button type="button" onClick={() => setStep(1)} className="text-[10px] font-bold text-teal-600 uppercase hover:underline">Modificar Dueño</button>
+              <button type="button" onClick={() => setStep(1)} className="text-[12px] font-bold text-teal-600 hover:underline">Modificar Dueño</button>
             </div>
 
             {/* Grid de Mascotas */}
@@ -271,12 +292,12 @@ export default function GestionPacientesClient({ onProcesarPropietario, onGuarda
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">Nombre Mascota *</label>
+                    <label className="font-bold text-slate-500">Nombre Mascota <span className="text-red-500">*</span></label>
                     <input type="text" required value={pNombre} onChange={(e) => setPNombre(e.target.value)} placeholder="Ej. Rocko" className="w-full h-9 px-2.5 bg-white dark:bg-slate-900 border rounded-xl outline-none" />
                   </div>
                   
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-500">Especie *</label>
+                    <label className="font-bold text-slate-500">Especie <span className="text-red-500">*</span></label>
                     <select value={pEspecie} onChange={(e) => setPEspecie(e.target.value as Paciente["especie"])} className="w-full h-9 px-2 bg-white dark:bg-slate-900 border rounded-xl outline-none text-[11px] font-semibold">
                       <option value="Perro">🐶 Perro</option>
                       <option value="Gato">🐱 Gato</option>

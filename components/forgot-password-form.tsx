@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Mail } from "lucide-react";
+import { toast } from "sonner";
 
 export function ForgotPasswordForm({
   className,
@@ -33,6 +34,15 @@ export function ForgotPasswordForm({
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 🚀 VALIDACIÓN PREMIUM CON TOAST: Verifica que no envíe el correo vacío
+    if (!email.trim()) {
+      toast.warning("Atención", {
+        description: "Es necesario ingresar un correo electrónico para poder recuperar tu contraseña.",
+      });
+      return;
+    }
+
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
@@ -52,22 +62,28 @@ export function ForgotPasswordForm({
 
       // Si el correo no existe registrado en la base de datos
       if (!dbUser) {
-        setError("El correo electrónico ingresado no se encuentra registrado.");
-        setEmail(""); // Limpiamos el input
+        const msgError = "El correo electrónico ingresado no se encuentra registrado.";
+        setError(msgError);
+        toast.error(msgError); // Notificación flotante de error
+        setEmail(""); 
         setIsLoading(false);
         return;
       }
 
       // Si existe pero no está aprobado (pendiente, suspendido, rechazado)
       if (dbUser.estado !== "aprobado") {
+        let msgEstado = "";
         if (dbUser.estado === "pendiente") {
-          setError("Tu cuenta aún está pendiente de aprobación por un administrador.");
+          msgEstado = "Tu cuenta aún está pendiente de aprobación por un administrador.";
         } else if (dbUser.estado === "suspendido") {
-          setError("Esta cuenta se encuentra suspendida. No puedes restablecer contraseña.");
+          msgEstado = "Esta cuenta se encuentra suspendida. No puedes restablecer contraseña.";
         } else if (dbUser.estado === "rechazado") {
-          setError("Tu solicitud de acceso fue rechazada.");
+          msgEstado = "Tu solicitud de acceso fue rechazada.";
         }
-        setEmail(""); // Limpiamos el input
+        
+        setError(msgEstado);
+        toast.error(msgEstado); // Notificación flotante de cuenta bloqueada
+        setEmail(""); 
         setIsLoading(false);
         return;
       }
@@ -83,8 +99,13 @@ export function ForgotPasswordForm({
       if (authError) throw authError;
 
       setSuccess(true);
+      toast.success("Enlace enviado", {
+        description: "Revisa tu bandeja de entrada para restablecer tu contraseña.",
+      });
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Ha ocurrido un error");
+      const msgFinal = error instanceof Error ? error.message : "Ha ocurrido un error inesperado.";
+      setError(msgFinal);
+      toast.error(msgFinal);
       setEmail("");
     } finally {
       setIsLoading(false);
@@ -124,7 +145,7 @@ export function ForgotPasswordForm({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-10 pt-4">
-            <form onSubmit={handleForgotPassword}>
+            <form onSubmit={handleForgotPassword} noValidate>
               <div className="flex flex-col gap-6">
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />

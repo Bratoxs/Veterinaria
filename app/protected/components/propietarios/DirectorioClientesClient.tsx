@@ -22,6 +22,10 @@ export default function DirectorioClientesClient({ propietariosIniciales, onElim
   const [busqueda, setBusqueda] = useState("");
   const [expedienteAbierto, setExpedienteAbierto] = useState<string | null>(null);
 
+  // Estados para el Modal de Confirmación Destructiva Profesional
+  const [modalEliminarOpen, setModalEliminarOpen] = useState(false);
+  const [propietarioAEliminar, setPropietarioAEliminar] = useState<{ id: string; nombre: string } | null>(null);
+
   // Filtrado en tiempo real por Nombre o Cédula
   const propietariosFiltrados = propietariosIniciales.filter(p => 
     p.nombre_completo.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -32,16 +36,25 @@ export default function DirectorioClientesClient({ propietariosIniciales, onElim
     setExpedienteAbierto(expedienteAbierto === id ? null : id);
   };
 
-  const handleEliminar = (id: string, nombre: string) => {
-    if (!confirm(`¿Estás seguro de eliminar el expediente de ${nombre}? Esto borrará también a todas sus mascotas asociadas.`)) return;
+  // Abre el modal estilizado guardando la referencia del registro objetivo
+  const registrarIntentoEliminar = (id: string, nombre: string) => {
+    setPropietarioAEliminar({ id, nombre });
+    setModalEliminarOpen(true);
+  };
+
+  // Ejecuta la eliminación real interactuando con la base de datos
+  const confirmarYEjecutarEliminar = () => {
+    if (!propietarioAEliminar) return;
 
     startTransition(async () => {
       try {
-        await onEliminarPropietario(id);
-        toast.success("Expediente eliminado del sistema.");
+        await onEliminarPropietario(propietarioAEliminar.id);
+        toast.success(`El expediente de ${propietarioAEliminar.nombre} fue eliminado.`);
+        setModalEliminarOpen(false);
+        setPropietarioAEliminar(null);
       } catch (error) {
         console.error("Error al eliminar el expediente:", error);
-        toast.error("No se pudo eliminar el registro.");
+        toast.error("No se pudo eliminar el registro de la base de datos.");
       }
     });
   };
@@ -50,7 +63,7 @@ export default function DirectorioClientesClient({ propietariosIniciales, onElim
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6 min-h-screen pb-20 text-xs font-sans text-slate-700 dark:text-slate-300 relative">
       
       {/* Indicador de carga sutil en mutaciones */}
-      {isPending && (
+      {isPending && !modalEliminarOpen && (
         <div className="fixed bottom-5 right-5 bg-slate-900 text-white dark:bg-teal-600 px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 font-bold z-50 animate-bounce">
           Actualizando expedientes...
         </div>
@@ -136,7 +149,7 @@ export default function DirectorioClientesClient({ propietariosIniciales, onElim
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <button 
                       type="button"
-                      onClick={() => handleEliminar(propietario.id, propietario.nombre_completo)}
+                      onClick={() => registrarIntentoEliminar(propietario.id, propietario.nombre_completo)}
                       className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       title="Eliminar Expediente"
                     >
@@ -242,6 +255,68 @@ export default function DirectorioClientesClient({ propietariosIniciales, onElim
         <Info className="h-3.5 w-3.5" />
         <span className="text-[10px] font-medium">Los cambios y eliminaciones se sincronizan en cascada de forma segura mediante Supabase.</span>
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN DESTRUCTIVA PREMIUM */}
+      {modalEliminarOpen && propietarioAEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Capa de fondo traslúcida con desenfoque */}
+          <div 
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => !isPending && setModalEliminarOpen(false)}
+          />
+          
+          {/* Caja del Modal */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-5 relative z-10 animate-in zoom-in-95 duration-200">
+            
+            {/* Icono de advertencia destacado */}
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 mb-4">
+              <Trash2 className="h-5 w-5" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                ¿Eliminar expediente médico?
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed px-2">
+                Estás a punto de borrar de forma definitiva el historial de{" "}
+                <strong className="text-slate-800 dark:text-slate-200 font-semibold">
+                  &ldquo;{propietarioAEliminar.nombre}&rdquo;
+                </strong>
+                . Esta acción eliminará también en cascada a todas sus mascotas vinculadas.
+              </p>
+            </div>
+
+            {/* Botones de acción controlados */}
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => {
+                  setModalEliminarOpen(false);
+                  setPropietarioAEliminar(null);
+                }}
+                className="h-9 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs font-bold transition-all disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={confirmarYEjecutarEliminar}
+                className="h-9 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isPending ? (
+                  <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Eliminar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
